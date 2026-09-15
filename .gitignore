@@ -1,0 +1,4 @@
+.idea/
+.venv/
+.env
+chroma_db/

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lara Intelligent Assistant - LIA</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <header class="header">
+            <img
+                class="college-logo"
+                src="assets/vignan-lara-logo.png"
+                alt="Vignan's Lara Institute of Technology and Science logo"
+            >
+
+            <div class="header-text">
+                <h1>Lara Intelligent Assistant</h1>
+                <p>Vignan's Lara Institute of Technology &amp; Science</p>
+            </div>
+        </header>
+
+        <main class="chat-container">
+
+            <div id="chat-box" class="chat-box">
+
+                <div class="message assistant">
+                    <div class="avatar">LIA</div>
+
+                    <div class="message-content">
+                        <strong>Lara Intelligent Assistant</strong>
+                        <p>
+                            Hello. I can answer questions using the available
+                            college documents. What would you like to know?
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="input-area">
+
+                <textarea
+                    id="question"
+                    placeholder="Ask LIA a question..."
+                    rows="1"
+                ></textarea>
+
+                <button id="send-button">
+                    Send
+                </button>
+
+            </div>
+
+            <div class="footer">
+                LIA answers are based on available college documents.
+            </div>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

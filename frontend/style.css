@@ -1,0 +1,299 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --antique-white: #dff5ee;
+    --antique-white-light: #ffffff;
+    --golden-brown: #16856b;
+    --golden-brown-dark: #08634f;
+    --golden-brown-light: #79cdb8;
+    --brown-soft: #b9e4d6;
+    --text-dark: #153d34;
+    --text-muted: #527269;
+    --white: #ffffff;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--antique-white);
+    color: var(--text-dark);
+    min-height: 100vh;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+.app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--antique-white-light);
+}
+
+/* Header */
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 22px 28px;
+    background: var(--golden-brown-dark);
+    color: var(--antique-white);
+    border-bottom: 4px solid var(--golden-brown-light);
+}
+
+.college-logo {
+    width: 155px;
+    max-height: 64px;
+    object-fit: contain;
+    object-position: left center;
+    background: var(--white);
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+.header-text h1 {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.header-text p {
+    color: var(--brown-soft);
+    font-size: 14px;
+}
+
+/* Chat */
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.chat-box {
+    flex: 1;
+    padding: 28px clamp(20px, 8vw, 160px);
+    overflow-y: auto;
+}
+
+.message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.avatar {
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--golden-brown);
+    color: var(--antique-white);
+
+    border-radius: 50%;
+
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.message-content {
+    max-width: min(75%, 780px);
+    padding: 15px 18px;
+
+    border-radius: 14px;
+
+    line-height: 1.55;
+}
+
+.message-content strong {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--golden-brown-dark);
+}
+
+.message-content p {
+    margin: 0;
+}
+
+.message.assistant .message-content {
+    background: var(--antique-white);
+    border: 1px solid var(--brown-soft);
+    color: var(--text-dark);
+}
+
+.message.user .message-content {
+    background: var(--golden-brown);
+    color: var(--white);
+    border-bottom-right-radius: 4px;
+}
+
+/* Sources */
+
+.sources {
+    margin-top: 12px;
+    padding-top: 10px;
+
+    border-top: 1px solid var(--brown-soft);
+
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.sources strong {
+    color: var(--golden-brown-dark);
+    margin-bottom: 5px;
+}
+
+.source {
+    margin-top: 4px;
+}
+
+/* Input */
+
+.input-area {
+    display: flex;
+    gap: 12px;
+
+    padding: 18px clamp(20px, 8vw, 160px);
+
+    background: var(--antique-white);
+    border-top: 1px solid var(--brown-soft);
+}
+
+textarea {
+    flex: 1;
+
+    resize: none;
+
+    min-height: 46px;
+    max-height: 120px;
+
+    padding: 13px 15px;
+
+    border: 1px solid var(--golden-brown-light);
+    border-radius: 10px;
+
+    background: var(--antique-white-light);
+    color: var(--text-dark);
+
+    font-family: inherit;
+    font-size: 15px;
+
+    outline: none;
+}
+
+textarea:focus {
+    border-color: var(--golden-brown);
+    box-shadow: 0 0 0 2px rgba(153, 101, 21, 0.12);
+}
+
+textarea::placeholder {
+    color: var(--text-muted);
+}
+
+button {
+    align-self: stretch;
+
+    min-width: 90px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: var(--golden-brown);
+    color: var(--white);
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease;
+}
+
+button:hover {
+    background: var(--golden-brown-dark);
+}
+
+button:disabled {
+    background: var(--golden-brown-light);
+    cursor: not-allowed;
+}
+
+/* Footer */
+
+.footer {
+    padding: 10px 24px 14px;
+
+    background: var(--antique-white);
+
+    text-align: center;
+
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Scrollbar */
+
+.chat-box::-webkit-scrollbar {
+    width: 7px;
+}
+
+.chat-box::-webkit-scrollbar-track {
+    background: var(--antique-white);
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+    background: var(--golden-brown-light);
+    border-radius: 10px;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+
+    .header {
+        padding: 18px;
+    }
+
+    .college-logo {
+        width: 105px;
+        max-height: 48px;
+    }
+
+    .header-text h1 {
+        font-size: 19px;
+    }
+
+    .chat-box {
+        padding: 18px;
+    }
+
+    .message-content {
+        max-width: 85%;
+    }
+
+    .input-area {
+        padding: 12px;
+    }
+
+    button {
+        min-width: 70px;
+    }
+}
