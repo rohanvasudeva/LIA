@@ -53,6 +53,65 @@ function addMessage(text, type) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function addAssistantResponse(data) {
+    const message = document.createElement("div");
+    message.className = "message message-assistant";
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "✦";
+    message.appendChild(avatar);
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    const name = document.createElement("strong");
+    name.textContent = "LIA";
+    bubble.appendChild(name);
+
+    if (data.answer) {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = data.answer;
+        bubble.appendChild(paragraph);
+    }
+
+    if (data.table) {
+        const tableTitle = document.createElement("h4");
+        tableTitle.textContent = data.table.title;
+        bubble.appendChild(tableTitle);
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "answer-table-wrap";
+        const table = document.createElement("table");
+        const head = document.createElement("thead");
+        const headRow = document.createElement("tr");
+        data.table.columns.forEach((column) => {
+            const cell = document.createElement("th");
+            cell.textContent = column;
+            headRow.appendChild(cell);
+        });
+        head.appendChild(headRow);
+        table.appendChild(head);
+
+        const body = document.createElement("tbody");
+        data.table.rows.forEach((row) => {
+            const tableRow = document.createElement("tr");
+            row.forEach((value) => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                tableRow.appendChild(cell);
+            });
+            body.appendChild(tableRow);
+        });
+        table.appendChild(body);
+        tableWrap.appendChild(table);
+        bubble.appendChild(tableWrap);
+    }
+
+    message.appendChild(bubble);
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 async function sendQuestion(question) {
     const value = (question || questionInput.value).trim();
     if (!value) return;
@@ -70,7 +129,7 @@ async function sendQuestion(question) {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || "Request failed");
-        addMessage(data.answer, "assistant");
+        addAssistantResponse(data);
     } catch (error) {
         addMessage("I couldn't connect right now. Please try again.", "assistant");
     } finally {
@@ -82,6 +141,13 @@ async function sendQuestion(question) {
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
     sendQuestion();
+});
+
+questionInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion();
+    }
 });
 
 document.querySelectorAll(".quick-questions button").forEach((button) => {

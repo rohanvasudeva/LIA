@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from pathlib import Path
 
 import pymupdf
@@ -202,6 +203,8 @@ def _branch(question):
 
 def _day(question):
     normalized = question.lower()
+    if re.search(r"\btoday\b", normalized):
+        return datetime.now().strftime("%A").lower()
     return next((day for day in DAYS if re.search(rf"\b{day}\b", normalized)), None)
 
 
@@ -225,20 +228,28 @@ def _ordinal(year):
     return {2: "2nd", 3: "3rd", 4: "4th"}.get(year, f"{year}th")
 
 
+def _scope(year, branch):
+    if year:
+        scope = f"{_ordinal(year)} year"
+    else:
+        scope = "the matching years"
+    return f"{scope} {branch.upper()}" if branch else scope
+
+
 def _answer_subjects(matches, year, branch):
     subjects = sorted({record["subject"] for record in matches})
     if not subjects:
         return None
-    scope = f"{_ordinal(year)} year" if year else "the available"
-    if branch:
-        scope += f" {branch.upper()}"
+    scope = _scope(year, branch)
     return f"Subjects for {scope}: {', '.join(subjects)}."
 
 
 def _answer_rooms(matches, year, branch, day, time):
     if time == "first":
-        ordered_times = {record["time"] for record in matches if record["time"]}
-        time = sorted(ordered_times, key=lambda item: (int(item.split(":")[0]), item))[0] if ordered_times else None
+        time = next(
+            (record["time"] for record in matches if record["time"]),
+            None,
+        )
 
     scoped = [
         record for record in matches
@@ -248,9 +259,7 @@ def _answer_rooms(matches, year, branch, day, time):
     if not scoped:
         return None
 
-    scope = f"{_ordinal(year)} year"
-    if branch:
-        scope += f" {branch.upper()}"
+    scope = _scope(year, branch)
 
     if day and time:
         entries = []
@@ -266,24 +275,115 @@ def _answer_rooms(matches, year, branch, day, time):
     return f"Classrooms for {scope}: {'; '.join(rows)}."
 
 
-def timetable_answer(question):
+def _answer_subject_at_time(matches, year, branch, day, time):
+    if time == "first":
+        time = next(
+            (record["time"] for record in matches if record["time"]),
+            None,
+        )
+
+    scoped = [
+        record for record in matches
+        if (not day or record["day"] == day)
+        and (not time or record["time"] == time)
+    ]
+    if not scoped:
+        return None
+
+    scope = _scope(year, branch)
+
+    if day and time:
+        entries = []
+        for record in scoped:
+            subject = record["subject"]
+            entries.append(
+                f"{_ordinal(record['year'])} year: {subject}"
+                if not year
+                else subject
+            )
+        return f"For {scope}, the {time} hour on {day.title()} is {'; '.join(entries)}."
+
+    rows = [
+        f"{record['day'].title()} {record['time']}: {record['subject']}"
+        for record in scoped
+    ]
+    return f"Subjects for {scope} at {time}: {'; '.join(rows)}."
+
+
+def _table_response(matches, year, branch, day):
+    scoped = [
+        record for record in matches
+        if not day or record["day"] == day
+    ]
+    if not scoped:
+        return None
+
+    day_order = {name: index for index, name in enumerate(DAYS)}
+    time_order = {}
+    for record in matches:
+        if record["time"] and record["time"] not in time_order:
+            time_order[record["time"]] = len(time_order)
+    scoped.sort(
+        key=lambda record: (
+            day_order.get(record["day"], 99),
+            time_order.get(record["time"], 99),
+        )
+    )
+
+    rows = [
+        [
+            record["day"].title(),
+            record["time"] or "—",
+            record["subject"],
+            record["room"] or "Not specified",
+        ]
+        for record in scoped
+    ]
+    scope = _scope(year, branch)
+    title = f"{scope} timetable"
+    if day:
+        title = f"{scope} timetable for {day.title()}"
+    return {
+        "answer": f"Here is the {title.lower()}.",
+        "table": {
+            "title": title,
+            "columns": ["Day", "Time", "Subject", "Classroom"],
+            "rows": rows,
+        },
+    }
+
+
+def timetable_response(question):
     normalized = question.lower()
     year = _year(question)
     branch = _branch(question)
     asks_subjects = any(term in normalized for term in ("subject", "course", "what do", "have"))
     asks_room = any(term in normalized for term in ("classroom", "class room", "room no", "which room", "where"))
     asks_schedule = any(term in normalized for term in ("timetable", "time table", "hour", "period", "class"))
-    if not (year and (asks_subjects or asks_room or asks_schedule)):
+    requested_time = _time(question)
+    day = _day(question)
+    if not ((year or branch) and (asks_subjects or asks_room or asks_schedule or requested_time)):
         return None
 
     matches = _matches(_load_records(), year, branch)
     if not matches:
         return None
 
-    if asks_subjects and not asks_room and not _time(question):
-        return _answer_subjects(matches, year, branch)
+    if asks_schedule and not asks_room and not requested_time and not asks_subjects:
+        return _table_response(matches, year, branch, day)
 
     if asks_room:
-        return _answer_rooms(matches, year, branch, _day(question), _time(question))
+        return {"answer": _answer_rooms(matches, year, branch, day, requested_time)}
 
-    return _answer_subjects(matches, year, branch)
+    if requested_time:
+        return {"answer": _answer_subject_at_time(matches, year, branch, day, requested_time)}
+
+    if asks_subjects:
+        return {"answer": _answer_subjects(matches, year, branch)}
+
+    return {"answer": _answer_subjects(matches, year, branch)}
+
+
+def timetable_answer(question):
+    response = timetable_response(question)
+    return response["answer"] if response else None

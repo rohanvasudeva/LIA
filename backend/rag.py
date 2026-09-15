@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
-from backend.timetables import timetable_answer
+from backend.timetables import timetable_response
 
 load_dotenv()
 
@@ -192,9 +192,9 @@ def ask_question(question):
     Complete RAG pipeline.
     """
 
-    direct_answer = timetable_answer(question)
+    direct_answer = timetable_response(question)
     if direct_answer:
-        return {"answer": direct_answer}
+        return direct_answer
 
     contexts = retrieve_context(question)
 
