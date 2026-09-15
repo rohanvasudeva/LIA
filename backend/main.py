@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -31,15 +31,17 @@ def health():
     }
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
+
+
 @app.post("/chat")
 def chat(request: ChatRequest):
     question = request.question.strip()
 
     if not question:
-        return {
-            "answer": "Please enter a question.",
-            "sources": []
-        }
+        return {"answer": "Please enter a question."}
 
     result = ask_question(question)
 

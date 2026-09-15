@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import chromadb
@@ -6,6 +7,7 @@ from dotenv import load_dotenv
 from groq import Groq
 from sentence_transformers import SentenceTransformer
 
+from backend.timetables import timetable_answer
 
 load_dotenv()
 
@@ -48,7 +50,25 @@ def get_groq_client():
     return groq_client
 
 
-def retrieve_context(question, top_k=5):
+def _search_terms(question):
+    terms = set(re.findall(r"[a-z0-9]+", question.lower()))
+
+    if "4th" in terms or "fourth" in terms:
+        terms.update({"iv", "fourth", "4th"})
+    if "pe" in terms or "physical" in terms:
+        terms.update({"pe", "physical"})
+    if "teach" in terms or "teacher" in terms or "teaches" in terms:
+        terms.update({"teach", "teacher", "teaches", "faculty"})
+
+    return terms
+
+
+def _lexical_score(text, terms):
+    words = set(re.findall(r"[a-z0-9]+", text.lower()))
+    return sum(1 for term in terms if term in words)
+
+
+def retrieve_context(question, top_k=8):
     """
     Retrieve the most relevant chunks from ChromaDB.
     """
@@ -62,15 +82,43 @@ def retrieve_context(question, top_k=5):
 
     results = collection.query(
         query_embeddings=query_embedding,
-        n_results=top_k
+        n_results=min(top_k, collection.count())
+    )
+
+    terms = _search_terms(question)
+    all_chunks = collection.get(include=["documents", "metadatas"])
+    lexical_matches = sorted(
+        zip(all_chunks["documents"], all_chunks["metadatas"]),
+        key=lambda item: _lexical_score(item[0], terms),
+        reverse=True
+    )
+
+    candidates = []
+    seen = set()
+    for document, metadata in zip(
+        results["documents"][0],
+        results["metadatas"][0]
+    ):
+        key = document
+        if key not in seen:
+            candidates.append((document, metadata))
+            seen.add(key)
+
+    for document, metadata in lexical_matches[:top_k]:
+        if _lexical_score(document, terms) == 0:
+            break
+        if document not in seen:
+            candidates.append((document, metadata))
+            seen.add(document)
+
+    candidates.sort(
+        key=lambda item: _lexical_score(item[0], terms),
+        reverse=True
     )
 
     contexts = []
 
-    documents = results["documents"][0]
-    metadatas = results["metadatas"][0]
-
-    for document, metadata in zip(documents, metadatas):
+    for document, metadata in candidates[:top_k]:
 
         contexts.append({
             "text": document,
@@ -144,6 +192,10 @@ def ask_question(question):
     Complete RAG pipeline.
     """
 
+    direct_answer = timetable_answer(question)
+    if direct_answer:
+        return {"answer": direct_answer}
+
     contexts = retrieve_context(question)
 
     if not contexts:
@@ -157,13 +209,4 @@ def ask_question(question):
         contexts
     )
 
-    return {
-        "answer": answer,
-        "sources": [
-            {
-                "filename": context["filename"],
-                "page_number": context["page_number"]
-            }
-            for context in contexts
-        ]
-    }
+    return {"answer": answer}

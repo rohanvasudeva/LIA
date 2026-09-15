@@ -5,7 +5,7 @@ const sendButton = document.getElementById("send-button");
 const API_URL = "/chat";
 
 
-function addMessage(text, type, sources = []) {
+function addMessage(text, type) {
 
     const message = document.createElement("div");
     message.className = `message ${type}`;
@@ -34,30 +34,6 @@ function addMessage(text, type, sources = []) {
     textElement.textContent = text;
 
     content.appendChild(textElement);
-
-    if (sources.length > 0) {
-
-        const sourcesContainer = document.createElement("div");
-        sourcesContainer.className = "sources";
-
-        const title = document.createElement("strong");
-        title.textContent = "Sources";
-
-        sourcesContainer.appendChild(title);
-
-        sources.forEach(source => {
-
-            const sourceElement = document.createElement("div");
-            sourceElement.className = "source";
-
-            sourceElement.textContent =
-                `${source.filename} — Page ${source.page_number}`;
-
-            sourcesContainer.appendChild(sourceElement);
-        });
-
-        content.appendChild(sourcesContainer);
-    }
 
     message.appendChild(content);
 
@@ -104,8 +80,7 @@ async function sendQuestion() {
 
         addMessage(
             data.answer,
-            "assistant",
-            data.sources || []
+            "assistant"
         );
 
     } catch (error) {
