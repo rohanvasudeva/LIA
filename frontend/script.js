@@ -1,114 +1,197 @@
+const ADMIN_TOKEN_KEY = "lia_admin_token";
+const routes = document.querySelectorAll("[data-route]");
+
+function currentRoute() {
+    const value = window.location.hash.replace(/^#\/?/, "");
+    return ["chat", "admin"].includes(value) ? value : "home";
+}
+
+function navigate() {
+    const route = currentRoute();
+    routes.forEach((section) => {
+        section.hidden = section.dataset.route !== route;
+    });
+    document.querySelectorAll("[data-route-link]").forEach((link) => {
+        link.classList.toggle("active", link.dataset.routeLink === route);
+    });
+    if (route === "admin") {
+        renderAdminState();
+    }
+}
+
+window.addEventListener("hashchange", navigate);
+navigate();
+
 const chatBox = document.getElementById("chat-box");
 const questionInput = document.getElementById("question");
+const chatForm = document.getElementById("chat-form");
 const sendButton = document.getElementById("send-button");
 
-const API_URL = "/chat";
-
-
 function addMessage(text, type) {
-
     const message = document.createElement("div");
-    message.className = `message ${type}`;
+    message.className = `message message-${type}`;
 
     if (type === "assistant") {
-
         const avatar = document.createElement("div");
         avatar.className = "avatar";
-        avatar.textContent = "LIA";
-
+        avatar.textContent = "✦";
         message.appendChild(avatar);
     }
 
-    const content = document.createElement("div");
-    content.className = "message-content";
-
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
     if (type === "assistant") {
-
         const name = document.createElement("strong");
-        name.textContent = "Lara Intelligent Assistant";
-
-        content.appendChild(name);
+        name.textContent = "LIA";
+        bubble.appendChild(name);
     }
-
-    const textElement = document.createElement("p");
-    textElement.textContent = text;
-
-    content.appendChild(textElement);
-
-    message.appendChild(content);
-
+    const paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    bubble.appendChild(paragraph);
+    message.appendChild(bubble);
     chatBox.appendChild(message);
-
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+async function sendQuestion(question) {
+    const value = (question || questionInput.value).trim();
+    if (!value) return;
 
-async function sendQuestion() {
-
-    const question = questionInput.value.trim();
-
-    if (!question) {
-        return;
-    }
-
-    addMessage(question, "user");
-
+    addMessage(value, "user");
     questionInput.value = "";
-
     sendButton.disabled = true;
-    sendButton.textContent = "Thinking...";
+    sendButton.textContent = "Thinking…";
 
     try {
-
-        const response = await fetch(API_URL, {
+        const response = await fetch("/chat", {
             method: "POST",
-
-            headers: {
-                "Content-Type": "application/json"
-            },
-
-            body: JSON.stringify({
-                question: question
-            })
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({question: value}),
         });
-
-        if (!response.ok) {
-            throw new Error("API request failed");
-        }
-
         const data = await response.json();
-
-        addMessage(
-            data.answer,
-            "assistant"
-        );
-
+        if (!response.ok) throw new Error(data.detail || "Request failed");
+        addMessage(data.answer, "assistant");
     } catch (error) {
-
-        console.error(error);
-
-        addMessage(
-            "Unable to connect to LIA. Make sure the FastAPI server is running.",
-            "assistant"
-        );
-
+        addMessage("I couldn't connect right now. Please try again.", "assistant");
     } finally {
-
         sendButton.disabled = false;
-        sendButton.textContent = "Send";
+        sendButton.innerHTML = "Send <span>↗</span>";
     }
 }
 
+chatForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    sendQuestion();
+});
 
-sendButton.addEventListener("click", sendQuestion);
+document.querySelectorAll(".quick-questions button").forEach((button) => {
+    button.addEventListener("click", () => sendQuestion(button.textContent));
+});
 
+function adminHeaders() {
+    return {Authorization: `Bearer ${localStorage.getItem(ADMIN_TOKEN_KEY)}`};
+}
 
-questionInput.addEventListener("keydown", function(event) {
+function renderAdminState() {
+    const loggedIn = Boolean(localStorage.getItem(ADMIN_TOKEN_KEY));
+    document.getElementById("admin-login").hidden = loggedIn;
+    document.getElementById("admin-dashboard").hidden = !loggedIn;
+    if (loggedIn) loadDocuments();
+}
 
-    if (event.key === "Enter" && !event.shiftKey) {
+document.getElementById("login-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const error = document.getElementById("login-error");
+    error.textContent = "";
 
-        event.preventDefault();
-
-        sendQuestion();
+    try {
+        const response = await fetch("/admin/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                admin_id: document.getElementById("admin-id").value.trim(),
+                password: document.getElementById("admin-password").value,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Unable to sign in");
+        localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
+        renderAdminState();
+    } catch (err) {
+        error.textContent = err.message;
     }
 });
+
+async function loadDocuments() {
+    const response = await fetch("/admin/documents", {headers: adminHeaders()});
+    if (response.status === 401) {
+        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        renderAdminState();
+        return;
+    }
+    if (!response.ok) throw new Error("Unable to load documents");
+
+    const data = await response.json();
+    const documents = data.documents || [];
+    document.getElementById("document-count").textContent = `${documents.length} document${documents.length === 1 ? "" : "s"}`;
+    document.getElementById("chunk-count").textContent = documents.reduce((total, item) => total + item.chunks, 0);
+    const list = document.getElementById("document-list");
+    list.innerHTML = documents.length
+        ? documents.map((item) => `
+            <div class="document-row">
+                <span class="file-icon">PDF</span>
+                <span><strong>${escapeHtml(item.filename)}</strong><small>${item.chunks} chunks · ${formatBytes(item.size)}</small></span>
+                <span class="document-live">●</span>
+            </div>`).join("")
+        : "<p class='form-message'>No documents uploaded yet.</p>";
+}
+
+document.getElementById("pdf-file").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const status = document.getElementById("upload-status");
+    status.className = "form-message";
+    status.style.color = "var(--blue)";
+    status.textContent = "Uploading and indexing…";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+        const response = await fetch("/admin/documents/upload", {
+            method: "POST",
+            headers: adminHeaders(),
+            body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Upload failed");
+        status.style.color = "var(--green)";
+        status.textContent = `${data.filename} is ready. ${data.chunks} chunks indexed.`;
+        await loadDocuments();
+    } catch (error) {
+        status.style.color = "var(--danger)";
+        status.textContent = error.message;
+    } finally {
+        event.target.value = "";
+    }
+});
+
+document.getElementById("refresh-documents").addEventListener("click", async (event) => {
+    event.currentTarget.disabled = true;
+    try {
+        await loadDocuments();
+    } finally {
+        event.currentTarget.disabled = false;
+    }
+});
+
+function formatBytes(bytes) {
+    return bytes < 1024 * 1024
+        ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+        : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+    }[character]));
+}

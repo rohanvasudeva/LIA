@@ -7,4 +7,5 @@ services:
       - .env
     volumes:
       - ./chroma_db:/app/chroma_db
+      - ./data:/app/data
     restart: unless-stopped

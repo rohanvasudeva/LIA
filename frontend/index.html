@@ -1,72 +1,175 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Lara Intelligent Assistant - LIA</title>
-
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIA | Lara Intelligent Assistant</title>
+    <style>
+        [hidden] { display: none !important; }
+        body { margin: 0; background: #f5f8fb; color: #21344a; font-family: Arial, sans-serif; }
+        .site-shell { width: min(1120px, calc(100% - 48px)); min-height: 100vh; margin: auto; display: flex; flex-direction: column; }
+        .site-header { height: 88px; display: flex; align-items: center; justify-content: space-between; }
+        .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: #21344a; }
+        .brand img { width: 108px; height: 44px; object-fit: contain; padding: 3px 6px; background: #fff; border-radius: 8px; }
+        .brand strong, .brand small { display: block; }
+        .brand strong { font-size: 21px; }
+        .main-nav { display: flex; gap: 8px; }
+        .main-nav a, .back-link { padding: 9px 13px; color: #708196; text-decoration: none; }
+        main { flex: 1; }
+        .route { padding: 42px 0 48px; }
+        .route-home { min-height: calc(100vh - 145px); display: flex; flex-direction: column; justify-content: center; }
+        .home-layout { display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 72px; max-width: 980px; margin: auto; }
+        .entry-panel, .chat-card, .panel { padding: 24px; border: 1px solid #dce6ef; border-radius: 18px; background: #fff; }
+        .entry-link { min-height: 80px; display: flex; align-items: center; gap: 13px; padding: 15px; border: 1px solid #dce6ef; border-radius: 12px; color: #21344a; text-decoration: none; }
+        .entry-link + .entry-link { margin-top: 12px; }
+        .entry-link > span:nth-child(2) { flex: 1; }
+        .entry-link strong, .entry-link small { display: block; }
+        .entry-link small { margin-top: 5px; color: #708196; font-size: 12px; }
+        .entry-link-dark { background: #13263d; color: #fff; }
+        .route-header { display: flex; align-items: end; justify-content: space-between; margin-bottom: 25px; }
+        .chat-box { height: clamp(280px, calc(100svh - 385px), 430px); overflow-y: auto; }
+        .message { display: flex; gap: 10px; margin: 12px 0; }
+        .message-user { justify-content: flex-end; }
+        .bubble { max-width: 78%; padding: 12px 15px; border-radius: 13px; background: #f0f5fa; }
+        .message-user .bubble { background: #13263d; color: #fff; }
+        .chat-form { display: flex; gap: 10px; margin-top: 16px; }
+        .chat-form textarea { flex: 1; }
+        .admin-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 18px; }
+        footer { padding: 24px 0; text-align: center; color: #8b9aaa; font-size: 11px; }
+        @media (max-width: 760px) { .site-shell { width: calc(100% - 32px); } .home-layout, .admin-grid { grid-template-columns: 1fr; gap: 27px; } }
+    </style>
+    <link rel="stylesheet" href="/style.css?v=3">
 </head>
-
 <body>
-
-    <div class="app">
-
-        <header class="header">
-            <img
-                class="college-logo"
-                src="assets/vignan-lara-logo.png"
-                alt="Vignan's Lara Institute of Technology and Science logo"
-            >
-
-            <div class="header-text">
-                <h1>Lara Intelligent Assistant</h1>
-                <p>Vignan's Lara Institute of Technology &amp; Science</p>
-            </div>
+    <div class="site-shell">
+        <header class="site-header">
+            <a class="brand" href="#/">
+                <img src="/assets/vignan-lara-logo.png" alt="Vignan's Lara Institute logo">
+                <span>
+                    <strong>LIA</strong>
+                    <small>Lara Intelligent Assistant</small>
+                </span>
+            </a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="#/chat" data-route-link="chat">Chat</a>
+                <a href="#/admin" data-route-link="admin">Admin</a>
+            </nav>
         </header>
 
-        <main class="chat-container">
-
-            <div id="chat-box" class="chat-box">
-
-                <div class="message assistant">
-                    <div class="avatar">LIA</div>
-
-                    <div class="message-content">
-                        <strong>Lara Intelligent Assistant</strong>
-                        <p>
-                            Hello. I can answer questions using the available
-                            college documents. What would you like to know?
-                        </p>
+        <main>
+            <section class="route route-home" data-route="home">
+                <div class="home-layout">
+                    <div class="home-intro">
+                        <div class="status-pill"><span></span> Campus knowledge hub</div>
+                        <h1>Find the answer.<br><em>Keep moving.</em></h1>
+                        <p>LIA helps students find trusted information about academics, timetables, classrooms and campus life.</p>
+                    </div>
+                    <div class="entry-panel">
+                        <p class="panel-kicker">Choose where to begin</p>
+                        <a class="entry-link entry-link-dark" href="#/chat">
+                            <span class="entry-icon">✦</span>
+                            <span><strong>Chat with LIA</strong><small>Ask a question about your college</small></span>
+                            <b>→</b>
+                        </a>
+                        <a class="entry-link" href="#/admin">
+                            <span class="entry-icon entry-icon-light">⌘</span>
+                            <span><strong>Admin workspace</strong><small>Manage the PDFs behind LIA</small></span>
+                            <b>→</b>
+                        </a>
                     </div>
                 </div>
+                <div class="home-foot">
+                    <span>Document grounded</span>
+                    <span>Built for Vignan's Lara</span>
+                    <span>Simple. Useful. Private.</span>
+                </div>
+            </section>
 
-            </div>
+            <section class="route route-chat" data-route="chat" hidden>
+                <div class="route-header">
+                    <div>
+                        <p class="panel-kicker">CAMPUS ASSISTANT</p>
+                        <h2>What do you need to know?</h2>
+                    </div>
+                    <a class="back-link" href="#/">← Home</a>
+                </div>
+                <div class="chat-card">
+                    <div id="chat-box" class="chat-box" aria-live="polite">
+                        <div class="message message-assistant">
+                            <div class="avatar">✦</div>
+                            <div class="bubble"><strong>LIA</strong><p>Hi! Ask me about subjects, classrooms, timetables, faculty or campus documents.</p></div>
+                        </div>
+                    </div>
+                    <div class="quick-questions">
+                        <button type="button">What subjects does 3rd year CSM-A have?</button>
+                        <button type="button">What classroom is 4th year CSD in on Monday at 9:00?</button>
+                    </div>
+                    <form id="chat-form" class="chat-form">
+                        <textarea id="question" rows="1" placeholder="Ask LIA anything..." required></textarea>
+                        <button id="send-button" type="submit">Send <span>↗</span></button>
+                    </form>
+                </div>
+            </section>
 
-            <div class="input-area">
+            <section class="route route-admin" data-route="admin" hidden>
+                <div class="route-header">
+                    <div>
+                        <p class="panel-kicker">KNOWLEDGE MANAGEMENT</p>
+                        <h2>Admin workspace</h2>
+                    </div>
+                    <a class="back-link" href="#/">← Home</a>
+                </div>
 
-                <textarea
-                    id="question"
-                    placeholder="Ask LIA a question..."
-                    rows="1"
-                ></textarea>
+                <div id="admin-login" class="admin-login panel">
+                    <div class="admin-mark">⌘</div>
+                    <h3>Sign in to manage LIA</h3>
+                    <p>Upload trusted PDFs and they will be extracted, chunked and indexed automatically.</p>
+                    <form id="login-form">
+                        <label for="admin-id">Admin ID</label>
+                        <input id="admin-id" autocomplete="username" placeholder="Enter admin ID" required>
+                        <label for="admin-password">Password</label>
+                        <input id="admin-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+                        <button class="wide-button" type="submit">Sign in <span>→</span></button>
+                        <div id="login-error" class="form-message error"></div>
+                    </form>
+                </div>
 
-                <button id="send-button">
-                    Send
-                </button>
-
-            </div>
-
-            <div class="footer">
-                LIA answers are based on available college documents.
-            </div>
-
+                <div id="admin-dashboard" hidden>
+                    <div class="admin-grid">
+                        <div class="panel upload-panel">
+                            <div class="panel-title">
+                                <div><p class="panel-kicker">ADD KNOWLEDGE</p><h3>Upload a PDF</h3></div>
+                                <span class="tag">AUTO-INDEX</span>
+                            </div>
+                            <p>Choose a timetable, circular or handbook. LIA will process it before making it available to the chatbot.</p>
+                            <label class="file-picker" for="pdf-file">
+                                <span class="upload-mark">↑</span>
+                                <strong>Choose PDF</strong>
+                                <small>Maximum size: 25 MB</small>
+                                <input id="pdf-file" type="file" accept=".pdf,application/pdf">
+                            </label>
+                            <div id="upload-status" class="form-message"></div>
+                        </div>
+                        <div class="panel index-panel">
+                            <p class="panel-kicker">LIVE INDEX</p>
+                            <strong id="chunk-count" class="index-number">—</strong>
+                            <p>chunks ready for answers</p>
+                            <div class="index-footer"><span id="document-count">— documents</span><span class="live-label">● Live</span></div>
+                        </div>
+                    </div>
+                    <div class="panel library-panel">
+                        <div class="panel-title">
+                            <div><p class="panel-kicker">SOURCE LIBRARY</p><h3>Knowledge documents</h3></div>
+                            <button id="refresh-documents" class="quiet-button" type="button">Refresh ↻</button>
+                        </div>
+                        <div id="document-list" class="document-list"></div>
+                    </div>
+                </div>
+            </section>
         </main>
 
+        <footer>Vignan's Lara Institute of Technology &amp; Science <span>·</span> LIA</footer>
     </div>
-
-    <script src="script.js"></script>
-
+    <script src="/script.js?v=3"></script>
 </body>
 </html>
