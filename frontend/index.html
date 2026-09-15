@@ -36,10 +36,16 @@
         .message-user { justify-content: flex-end; }
         .bubble { max-width: 78%; padding: 12px 15px; border-radius: 13px; background: #f0f5fa; }
         .message-user .bubble { background: #13263d; color: #fff; }
+        .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+        .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #2563eb; animation: typing 1s infinite ease-in-out; }
+        .typing-dots span:nth-child(2) { animation-delay: .15s; }
+        .typing-dots span:nth-child(3) { animation-delay: .3s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
         .answer-table-wrap { max-width: 100%; overflow-x: auto; }
         .answer-table-wrap table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 12px; }
         .answer-table-wrap th, .answer-table-wrap td { padding: 8px; border: 1px solid #dce6ef; text-align: left; }
         .answer-table-wrap th { background: #eaf1ff; }
+        .math-fallback { display: block; margin: 10px 0; padding: 9px 12px; border-left: 3px solid #2563eb; background: #f8fbff; font-family: Georgia, serif; font-size: 15px; }
         .chat-form { display: flex; gap: 10px; margin-top: 16px; }
         .chat-form textarea { flex: 1; }
         .admin-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 18px; }
@@ -47,6 +53,13 @@
         @media (max-width: 760px) { .site-shell { width: calc(100% - 32px); } .home-layout, .admin-grid { grid-template-columns: 1fr; gap: 27px; } }
     </style>
     <link rel="stylesheet" href="/style.css?v=3">
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] },
+            svg: { fontCache: "global" }
+        };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
     <div class="site-shell">
@@ -168,7 +181,10 @@
                     <div class="panel library-panel">
                         <div class="panel-title">
                             <div><p class="panel-kicker">SOURCE LIBRARY</p><h3>Knowledge documents</h3></div>
-                            <button id="refresh-documents" class="quiet-button" type="button">Refresh ↻</button>
+                            <div class="panel-actions">
+                                <button id="refresh-documents" class="quiet-button" type="button">Refresh ↻</button>
+                                <button id="logout-admin" class="quiet-button" type="button">Logout</button>
+                            </div>
                         </div>
                         <div id="document-list" class="document-list"></div>
                     </div>
@@ -178,6 +194,6 @@
 
         <footer>Vignan's Lara Institute of Technology &amp; Science <span>·</span> LIA</footer>
     </div>
-    <script src="/script.js?v=3"></script>
+    <script src="/script.js?v=4"></script>
 </body>
 </html>

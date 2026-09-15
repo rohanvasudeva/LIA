@@ -69,9 +69,10 @@ function addAssistantResponse(data) {
     bubble.appendChild(name);
 
     if (data.answer) {
-        const paragraph = document.createElement("p");
-        paragraph.textContent = data.answer;
-        bubble.appendChild(paragraph);
+        const answer = document.createElement("div");
+        answer.className = "rich-answer";
+        answer.innerHTML = renderAssistantText(data.answer);
+        bubble.appendChild(answer);
     }
 
     if (data.table) {
@@ -110,6 +111,84 @@ function addAssistantResponse(data) {
     message.appendChild(bubble);
     chatBox.appendChild(message);
     chatBox.scrollTop = chatBox.scrollHeight;
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([bubble]);
+    }
+}
+
+function renderAssistantText(text) {
+    const mathBlocks = [];
+    const escaped = escapeHtml(text).replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
+        const index = mathBlocks.push(formatMath(formula)) - 1;
+        return `@@MATH_${index}@@`;
+    });
+    const lines = escaped.split("\n");
+    const rendered = [];
+    let inList = false;
+
+    lines.forEach((line) => {
+        const listItem = line.match(/^\s*[-*]\s+(.+)$/);
+        if (listItem) {
+            if (!inList) {
+                rendered.push("<ul>");
+                inList = true;
+            }
+            rendered.push(`<li>${formatInline(listItem[1], mathBlocks)}</li>`);
+            return;
+        }
+        if (inList) {
+            rendered.push("</ul>");
+            inList = false;
+        }
+        if (line.trim()) {
+            rendered.push(`<p>${formatInline(line, mathBlocks)}</p>`);
+        }
+    });
+    if (inList) rendered.push("</ul>");
+    return rendered.join("");
+}
+
+function formatInline(text, mathBlocks) {
+    return text
+        .replace(/@@MATH_(\d+)@@/g, (_, index) => `<span class="math-fallback">${mathBlocks[index]}</span>`)
+        .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => `<span class="math-fallback">${formatMath(formula)}</span>`)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/__(.+?)__/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>");
+}
+
+function formatMath(formula) {
+    return formula
+        .replace(/\\text\{([^{}]*)\}/g, "$1")
+        .replace(/\\times/g, " × ")
+        .replace(/\\left|\\right/g, "")
+        .replace(/\\,/g, " ")
+        .replace(/[{}]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+    }[character]));
+}
+
+function addTypingIndicator() {
+    const message = document.createElement("div");
+    message.id = "typing-indicator";
+    message.className = "message message-assistant";
+    message.innerHTML = `
+        <div class="avatar">✦</div>
+        <div class="bubble">
+            <strong>LIA</strong>
+            <div class="typing-dots" aria-label="LIA is thinking">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    chatBox.appendChild(message);
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 async function sendQuestion(question) {
@@ -119,7 +198,7 @@ async function sendQuestion(question) {
     addMessage(value, "user");
     questionInput.value = "";
     sendButton.disabled = true;
-    sendButton.textContent = "Thinking…";
+    addTypingIndicator();
 
     try {
         const response = await fetch("/chat", {
@@ -129,12 +208,13 @@ async function sendQuestion(question) {
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.detail || "Request failed");
+        document.getElementById("typing-indicator")?.remove();
         addAssistantResponse(data);
     } catch (error) {
+        document.getElementById("typing-indicator")?.remove();
         addMessage("I couldn't connect right now. Please try again.", "assistant");
     } finally {
         sendButton.disabled = false;
-        sendButton.innerHTML = "Send <span>↗</span>";
     }
 }
 
@@ -250,14 +330,13 @@ document.getElementById("refresh-documents").addEventListener("click", async (ev
     }
 });
 
+document.getElementById("logout-admin").addEventListener("click", () => {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    renderAdminState();
+});
+
 function formatBytes(bytes) {
     return bytes < 1024 * 1024
         ? `${Math.max(1, Math.round(bytes / 1024))} KB`
         : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function escapeHtml(value) {
-    return value.replace(/[&<>"']/g, (character) => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
-    }[character]));
 }

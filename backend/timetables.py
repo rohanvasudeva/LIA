@@ -194,7 +194,7 @@ def _year(question):
 
 def _branch(question):
     normalized = question.lower().replace(" ", "")
-    match = re.search(r"(csm|cai|csd|aiml)(?:-?([abc]))?", normalized)
+    match = re.search(r"(csm|cai|csd|aiml|cse)(?:-?([abc]))?", normalized)
     if not match:
         return None
     branch = f"{match.group(1)}-{match.group(2)}" if match.group(2) else match.group(1)
@@ -367,7 +367,9 @@ def timetable_response(question):
 
     matches = _matches(_load_records(), year, branch)
     if not matches:
-        return None
+        return {
+            "answer": f"I couldn't find timetable data for {_scope(year, branch)}."
+        }
 
     if asks_schedule and not asks_room and not requested_time and not asks_subjects:
         return _table_response(matches, year, branch, day)
